@@ -1,62 +1,58 @@
-import React, { useState, useEffect } from 'react'
-import '../css/Event.css'
+// src/components/Event.jsx
 
-const Event = (props) => {
+import React, { useState, useEffect } from 'react';
+import EventsAPI from '../services/EventsAPI';
+import dates from '../utils/date'; 
+import '../css/Event.css';
 
-    const [event, setEvent] = useState([])
-    const [time, setTime] = useState([])
-    const [remaining, setRemaining] = useState([])
+const Event = ({ id }) => {
+  const [event, setEvent] = useState(null);
+  const [time, setTime] = useState('');
+  const [remaining, setRemaining] = useState('');
 
-    useEffect(() => {
-        (async () => {
-            try {
-                const eventData = await EventsAPI.getEventsById(props.id)
-                setEvent(eventData)
-            }
-            catch (error) {
-                throw error
-            }
-        }) ()
-    }, [])
+  useEffect(() => {
+    const fetchEvent = async () => {
+      try {
+        const eventData = await EventsAPI.getEventsById(id);
+        setEvent(eventData);
+      } catch (error) {
+        console.error('Error fetching event:', error);
+      }
+    };
 
-    useEffect(() => {
-        (async () => {
-            try {
-                const result = await dates.formatTime(event.time)
-                setTime(result)
-            }
-            catch (error) {
-                throw error
-            }
-        }) ()
-    }, [event])
+    fetchEvent();
+  }, [id]);
 
-    useEffect(() => {
-        (async () => {
-            try {
-                const timeRemaining = await dates.formatRemainingTime(event.remaining)
-                setRemaining(timeRemaining)
-                dates.formatNegativeTimeRemaining(remaining, event.id)
-            }
-            catch (error) {
-                throw error
-            }
-        }) ()
-    }, [event])
+  useEffect(() => {
+    if (event && event.date) {
+      const formattedTime = dates.formatTime(event.date);
+      setTime(formattedTime);
 
-    return (
-        <article className='event-information'>
-            <img src={event.image} />
+      const timeRemaining = dates.formatRemainingTime(event.date);
+      setRemaining(timeRemaining);
+      dates.formatNegativeTimeRemaining(timeRemaining, event.id);
+    }
+  }, [event]);
 
-            <div className='event-information-overlay'>
-                <div className='text'>
-                    <h3>{event.title}</h3>
-                    <p><i className="fa-regular fa-calendar fa-bounce"></i> {event.date} <br /> {time}</p>
-                    <p id={`remaining-${event.id}`}>{remaining}</p>
-                </div>
-            </div>
-        </article>
-    )
-}
+  if (!event) {
+    return <div>Loading...</div>;
+  }
 
-export default Event
+  return (
+    <article className='event-information'>
+      <img src={event.image} alt={event.name} />
+
+      <div className='event-information-overlay'>
+        <div className='text'>
+          <h3>{event.name}</h3>
+          <p>
+            <i className='fa-regular fa-calendar fa-bounce'></i> {event.date} <br /> {time}
+          </p>
+          <p id={`remaining-${event.id}`}>{remaining}</p>
+        </div>
+      </div>
+    </article>
+  );
+};
+
+export default Event;
